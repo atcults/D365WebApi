@@ -1,4 +1,6 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using System;
+using System.IO;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 
@@ -17,20 +19,32 @@ namespace D365WebApi
             //    Uncomment to use the built in container
             var serviceProvider = new ServiceCollection()
                 .AddLogging()
-                //.AddSingleton<IFooService, FooService>()
                 .BuildServiceProvider();
 
             //configure console logging
             serviceProvider
                 .GetService<ILoggerFactory>()
-                .AddConsole(LogLevel.Debug);
+                .AddConsole(LogLevel.Debug)
+                .AddDebug(LogLevel.Trace);
 
-            var logger = serviceProvider.GetService<ILoggerFactory>()
-                .CreateLogger<Program>();
+            var logger = serviceProvider.GetService<ILoggerFactory>().CreateLogger<Program>();
 
-            logger.LogDebug("Starting application");
+            logger.LogInformation("Starting application");
 
-            logger.LogDebug("All done!");
+            var appDataFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "D365Client");
+
+            if (!Directory.Exists(appDataFolder))
+            {
+                Directory.CreateDirectory(appDataFolder);
+            }
+
+            var filePath = Path.Combine(appDataFolder, "cloudkestrel-prod.json");
+
+            File.WriteAllText(filePath, "test");
+
+            Console.WriteLine("Press any key to exit!");
+
+            Console.ReadLine();
         }
     }
 }
