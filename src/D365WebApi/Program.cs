@@ -1,11 +1,15 @@
 ﻿using System;
 using System.IO;
+using D365WebApi.LogExtensions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 
 /*
- * CREDIT: https://github.com/andrewlock/blog-examples/tree/master/using-dependency-injection-in-a-net-core-console-application
+ * CREDITS: 
+ * DI: https://github.com/andrewlock/blog-examples/tree/master/using-dependency-injection-in-a-net-core-console-application
+ * Logging: https://docs.microsoft.com/en-us/aspnet/core/fundamentals/logging/loggermessage
+ * 
  */
 
 
@@ -18,7 +22,12 @@ namespace D365WebApi
         {
             //    Uncomment to use the built in container
             var serviceProvider = new ServiceCollection()
-                .AddLogging()
+                .AddLogging(builder =>
+                {
+                    builder.AddFilter("Default", LogLevel.Warning);
+                    builder.AddFilter("System", LogLevel.Information);
+                    builder.AddFilter("Microsoft", LogLevel.Information);
+                })
                 .BuildServiceProvider();
 
             //configure console logging
@@ -29,7 +38,12 @@ namespace D365WebApi
 
             var logger = serviceProvider.GetService<ILoggerFactory>().CreateLogger<Program>();
 
-            logger.LogInformation("Starting application");
+            logger.ApplicationStarted();
+
+            AppDomain.CurrentDomain.UnhandledException += (sender, eventArgs) =>
+            {
+                logger.ApplicationFaulted((Exception) eventArgs.ExceptionObject);
+            };
 
             var appDataFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "D365Client");
 
