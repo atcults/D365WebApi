@@ -1,8 +1,10 @@
 ﻿using System;
 using System.IO;
+using D365WebApi.Core;
 using D365WebApi.LogExtensions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 
 
 /*
@@ -54,7 +56,21 @@ namespace D365WebApi
 
             var filePath = Path.Combine(appDataFolder, "cloudkestrel-prod.json");
 
-            File.WriteAllText(filePath, "test");
+            if (!File.Exists(filePath))
+            {
+                using (var file = File.CreateText(filePath))
+                {
+                    var serializer = new JsonSerializer();
+                    serializer.Serialize(file, new ClientConfiguration
+                    {
+                        ClientId = "--YOUR CLIENT ID--",
+                        ClientSecret = "--YOUR CLIENT SECRET--",
+                        Region = "--YOUR REGION NAME--",
+                        TenantId = "--YOUR TENANT ID--",
+                        InstanceName = "--YOUR INSTANCE NAME--"
+                    });
+                }
+            }
 
             Console.WriteLine("Press any key to exit!");
 
