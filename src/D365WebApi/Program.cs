@@ -1,10 +1,9 @@
 ﻿using System;
-using System.IO;
-using D365WebApi.Core;
 using D365WebApi.LogExtensions;
+using D365WebApi.Services;
+using D365WebApi.Services.Impl;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
 
 
 /*
@@ -30,6 +29,7 @@ namespace D365WebApi
                     builder.AddFilter("System", LogLevel.Information);
                     builder.AddFilter("Microsoft", LogLevel.Information);
                 })
+                .AddSingleton<IClientConfigurationProvider, ClientConfigurationProvider>()
                 .BuildServiceProvider();
 
             //configure console logging
@@ -47,34 +47,16 @@ namespace D365WebApi
                 logger.ApplicationFaulted((Exception) eventArgs.ExceptionObject);
             };
 
-            var appDataFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "D365Client");
+            var configProvider = serviceProvider.GetService<IClientConfigurationProvider>();
 
-            if (!Directory.Exists(appDataFolder))
-            {
-                Directory.CreateDirectory(appDataFolder);
-            }
+            var config = configProvider.ReadFromDisk("cloudkestrel-prod");
 
-            var filePath = Path.Combine(appDataFolder, "cloudkestrel-prod.json");
-
-            if (!File.Exists(filePath))
-            {
-                using (var file = File.CreateText(filePath))
-                {
-                    var serializer = new JsonSerializer();
-                    serializer.Serialize(file, new ClientConfiguration
-                    {
-                        ClientId = "--YOUR CLIENT ID--",
-                        ClientSecret = "--YOUR CLIENT SECRET--",
-                        Region = "--YOUR REGION NAME--",
-                        TenantId = "--YOUR TENANT ID--",
-                        InstanceName = "--YOUR INSTANCE NAME--"
-                    });
-                }
-            }
+            logger.LogInformation(config.Region);
 
             Console.WriteLine("Press any key to exit!");
 
             Console.ReadLine();
+            logger.ApplicationExited();
         }
     }
 }
